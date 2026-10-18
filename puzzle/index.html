@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Origin policy for images. A crafted `#p=` share link can put an
+         arbitrary URL in the payload's image field, which reaches the SVG
+         `<image>` href — not XSS (an `<image>` executes nothing), but enough
+         to make anyone who opens the link fetch an attacker-controlled host,
+         leaking their IP and User-Agent. The share codec's `isSafeImageUrl`
+         guards the *scheme*; it cannot guard the host, because legitimate
+         links carry arbitrary Unsplash URLs and no scheme check separates
+         those from `https://evil.example/pixel.png`. This does, and it covers
+         resumed saves too rather than just share links.
+
+         `img-src` only, deliberately: a `default-src` would need script/style/
+         connect/font policy worked out alongside it.
+         The wildcard is a hedge, not a fix for an observed case: every
+         Unsplash image this app has loaded came from `images.unsplash.com`
+         (analytics through 2026-08-02 show zero `imageSource: 'fallback'`
+         across 358 Unsplash games, and `classifyImageSource` sends any
+         other host to that bucket — so pinning would have been correct
+         too). It is wildcarded because the error is asymmetric: a CDN host
+         we cannot predict blanks every puzzle for every player, while the
+         extra breadth is one vendor's own subdomains. Matches subdomains
+         but not the bare apex, which images never come from.
+         API calls are not covered here at all: they are fetches, governed by
+         `connect-src`, and since #535 they go to the image-proxy Worker
+         rather than to Unsplash. Adding a `default-src` later would start
+         constraining them — that URL is the one to allowlist, not
+         `api.unsplash.com`, which the browser no longer contacts. -->
+    <meta http-equiv="Content-Security-Policy"
+          content="img-src 'self' https://*.unsplash.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="description" content="A jigsaw puzzle web app" />
+    <title>Puzzle</title>
+    <link rel="icon" href="/puzzle/favicon-48.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/puzzle/apple-touch-icon.png" />
+    <script type="module" crossorigin src="/puzzle/assets/index-Bfne2Gpf.js"></script>
+    <link rel="stylesheet" crossorigin href="/puzzle/assets/index-C4zqPuPJ.css">
+  <link rel="manifest" href="/puzzle/manifest.webmanifest"></head>
+  <body>
+    <div id="app"></div>
+    <!-- The live region is the text, not the overlay: showLoadingOverlay may
+         append a Cancel button here, and an interactive control must not sit
+         inside a role="status" announcement. Keep in sync with
+         src/ui/loading-overlay.ts, which builds the same structure. -->
+    <div class="loading-overlay">
+      <div class="loading-overlay__spinner"></div>
+      <div class="loading-overlay__text" role="status" aria-live="polite">Building puzzle…</div>
+    </div>
+  </body>
+</html>
